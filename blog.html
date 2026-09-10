@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zeroxv6 // blog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1a18;--sur:#252523;--sur2:#2f2f2d;--brd:#4a4a46;--brd2:#5a5a55;
+  --text:#ffffff;--dim:#e8e4d8;--mute:#c8c4b8;
+  --red:#ff5544;--red-hi:#ff7766;--red-lo:#cc3322;
+  --white:#ffffff;--green:#44ff88;--yellow:#ffaa22;
+  --ui:'Poppins',sans-serif;--body:'Source Serif Pro',serif;--head:'VT323',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:15px;line-height:1.6;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:.45;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:8999;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.035) 3px,rgba(0,0,0,0.035) 4px);}
+
+/* ── LAYOUT ── */
+.wrap{display:grid;grid-template-columns:195px 1fr;min-height:100vh;}
+
+/* ── SIDEBAR ── */
+.sb{border-right:1px solid var(--brd);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.sb-brand{padding:22px 16px 18px;border-bottom:1px solid var(--brd);}
+.sb-name{font-family:var(--head);font-size:54px;color:var(--white);letter-spacing:2px;line-height:1;display:block;}
+.sb-name::after{content:'_';color:var(--red);animation:bl 1.1s step-end infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.sb-sub{font-family:var(--ui);font-size:12px;color:var(--yellow);letter-spacing:4px;text-transform:uppercase;margin-top:5px;display:block;}
+.sb-nav{padding:14px 0;flex:1;overflow-y:auto;}
+.nav-sec{font-family:var(--ui);font-size:10px;letter-spacing:4px;color:var(--mute);text-transform:uppercase;padding:0 16px 7px;display:block;font-weight:600;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 16px;color:var(--dim);text-decoration:none;font-family:var(--ui);font-size:15px;font-weight:500;transition:color .1s,background .1s;border-left:2px solid transparent;}
+.ni:hover,.ni.on{color:var(--white);background:rgba(255,85,68,0.07);border-left-color:var(--red);}
+.ni .ic{color:var(--red-lo);font-size:14px;width:16px;flex-shrink:0;}
+.ni .ct{margin-left:auto;font-size:10px;color:var(--mute);font-weight:600;}
+.sb-foot{border-top:1px solid var(--brd);padding:14px 16px;font-family:var(--ui);font-size:12px;color:var(--mute);line-height:2.1;}
+.sb-foot b{color:var(--green);font-weight:500;}
+
+/* ── TOPBAR ── */
+.con{overflow-y:auto;display:flex;flex-direction:column;}
+.top{border-bottom:1px solid var(--brd);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;}
+.tp{font-family:var(--ui);font-size:12px;color:var(--dim);}
+.tp .sep{color:var(--red);margin:0 5px;}
+.tp .cp{color:var(--text);}
+.clk{font-family:var(--head);font-size:24px;color:var(--green);letter-spacing:2px;}
+
+/* ── PAGE HEADER ── */
+.ph{padding:38px 28px 32px;border-bottom:1px solid var(--brd);display:grid;grid-template-columns:1fr auto;gap:40px;align-items:end;}
+.ph-h{font-family:var(--head);font-size:64px;color:var(--white);line-height:1.05;letter-spacing:2px;}
+.ph-d{font-family:var(--body);font-size:16px;color:var(--dim);font-style:italic;line-height:1.75;max-width:400px;text-align:right;}
+
+/* ── FEATURED POST ── */
+.feat{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--brd);background:var(--sur);text-decoration:none;transition:background 0.2s;}
+.feat:hover{background:var(--sur2);}
+.feat-img{border-right:1px solid var(--brd);background:repeating-linear-gradient(45deg, var(--sur) 0, var(--sur) 2px, var(--sur2) 2px, var(--sur2) 4px);display:flex;align-items:center;justify-content:center;padding:40px;}
+.feat-img-text{font-family:var(--head);font-size:72px;color:var(--brd);transform:rotate(-10deg);opacity:0.5;}
+.feat-body{padding:40px 32px;display:flex;flex-direction:column;justify-content:center;}
+.feat-lbl{font-family:var(--ui);font-size:11px;letter-spacing:4px;color:var(--red);text-transform:uppercase;font-weight:700;margin-bottom:14px;display:inline-block;}
+.feat-t{font-family:var(--body);font-size:32px;color:var(--white);font-weight:600;line-height:1.2;margin-bottom:12px;}
+.feat-d{font-family:var(--body);font-size:16px;color:var(--dim);line-height:1.6;margin-bottom:20px;}
+.feat-meta{display:flex;align-items:center;gap:16px;font-family:var(--ui);font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:2px;font-weight:600;}
+
+/* ── BLOG FEED (ENHANCED LAYOUT) ── */
+/* Different from logbook: a spacious vertical timeline grid */
+.b-feed{display:flex;flex-direction:column;}
+.b-item{display:grid;grid-template-columns:160px 1fr auto;gap:32px;padding:36px 32px;border-bottom:1px solid var(--brd);transition:background 0.2s;text-decoration:none;align-items:start;}
+.b-item:hover{background:var(--sur);}
+.b-meta{display:flex;flex-direction:column;gap:8px;}
+.b-date{font-family:var(--head);font-size:36px;color:var(--yellow);line-height:1;}
+.b-rt{font-family:var(--ui);font-size:10px;color:var(--mute);text-transform:uppercase;letter-spacing:2px;font-weight:600;}
+.b-content{display:flex;flex-direction:column;gap:12px;max-width:800px;}
+.b-title{font-family:var(--body);font-size:24px;color:var(--white);font-weight:600;line-height:1.3;}
+.b-exc{font-family:var(--body);font-size:15px;color:var(--dim);line-height:1.65;}
+.b-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.btag{font-family:var(--ui);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:3px 8px;border:1px solid var(--brd2);color:var(--mute);font-weight:600;}
+.btag.red{border-color:var(--red-lo);color:var(--red);}
+.b-arr{font-family:var(--head);font-size:32px;color:var(--brd2);transition:all 0.2s;opacity:0;transform:translateX(-10px);}
+.b-item:hover .b-arr{opacity:1;color:var(--red);transform:translateX(0);}
+
+/* ── FOOTER ── */
+.foot{padding:16px 28px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;font-family:var(--ui);font-size:12px;color:var(--mute);}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;}
+.rv.in{opacity:1;transform:none;}
+
+/* MOBILE MENU (hidden on desktop) */
+.mobile-menu-btn{display:none;}
+.mobile-nav{display:none;}
+
+/* ══════════════════════════════════════
+   MOBILE STYLES
+   ══════════════════════════════════════ */
+@media(max-width:768px){
+  html,body{height:auto;overflow:auto;overflow-x:hidden;}
+  .mobile-menu-btn{display:flex;position:fixed;top:14px;left:14px;z-index:9999;background:var(--sur);border:2px solid var(--brd);color:var(--white);font-family:var(--ui);font-size:20px;cursor:pointer;width:46px;height:46px;align-items:center;justify-content:center;}
+  .mobile-nav{display:block;position:fixed;inset:0;background:var(--bg);z-index:9998;padding:70px 20px 20px;overflow-y:auto;transform:translateX(-100%);transition:transform .3s;}
+  .mobile-nav.open{transform:translateX(0);}
+  .mobile-nav .ni{display:flex;align-items:center;gap:10px;font-size:17px;padding:14px 18px;margin-bottom:8px;border:1px solid var(--brd);text-decoration:none;color:var(--dim);font-family:var(--ui);font-weight:500;}
+  .mobile-nav .ni.on{color:var(--white);border-color:var(--red);}
+  .mobile-nav .ni .ct{margin-left:auto;font-size:12px;color:var(--mute);font-weight:600;}
+  .sb{display:none;}
+  .wrap{display:block;min-height:100vh;}
+  .con{display:block;overflow:visible;}
+  .top{padding:10px 16px 10px 68px;position:sticky;top:0;z-index:100;}
+
+  /* page header */
+  .ph{display:block;padding:24px 16px;}
+  .ph-h{font-size:48px;margin-bottom:12px;}
+  .ph-d{text-align:left;max-width:100%;font-size:14px;}
+
+  /* featured */
+  .feat{grid-template-columns:1fr;}
+  .feat-img{display:none;} /* hide ascii art on mobile to save space */
+  .feat-body{padding:24px 16px;}
+  .feat-t{font-size:24px;}
+  .feat-d{font-size:14px;}
+
+  /* feed */
+  .b-item{grid-template-columns:1fr;gap:12px;padding:24px 16px;}
+  .b-meta{flex-direction:row;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--brd2);padding-bottom:8px;}
+  .b-date{font-size:24px;}
+  .b-title{font-size:20px;}
+  .b-arr{display:none;}
+
+  .foot{flex-direction:column;gap:6px;padding:14px 16px;text-align:center;}
+}
+::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--brd2);}
+</style>
+</head>
+<body>
+<button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">&#9776;</button>
+<div class="mobile-nav" id="mobileNav" onclick="this.classList.remove('open')">
+  <a href="index.html" class="ni"><span class="ic">~</span>home</a>
+  <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+  <a href="blog.html" class="ni on"><span class="ic">#</span>blog</a>
+  <a href="lab.html" class="ni"><span class="ic">$</span>lab</a>
+  <a href="logbook.html" class="ni"><span class="ic">&gt;</span>logbook</a>
+  <a href="connect.html" class="ni"><span class="ic">@</span>connect</a>
+</div>
+<div class="wrap">
+<!-- ── SIDEBAR ── -->
+<aside class="sb">
+  <div class="sb-brand">
+    <span class="sb-name">zeroxv6</span>
+    <span class="sb-sub">raman mann</span>
+  </div>
+  <nav class="sb-nav">
+    <span class="nav-sec">navigate</span>
+    <a href="index.html"    class="ni"><span class="ic">~</span>home</a>
+    <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+    <a href="blog.html"     class="ni on"><span class="ic">#</span>blog</a>
+    <a href="lab.html"      class="ni"><span class="ic">$</span>lab</a>
+    <a href="logbook.html"  class="ni"><span class="ic">&gt;</span>logbook</a>
+    <a href="connect.html"  class="ni"><span class="ic">@</span>connect</a>
+  </nav>
+</aside>
+
+<!-- ── CONTENT ── -->
+<div class="con">
+
+  <!-- TOPBAR -->
+  <div class="top">
+    <div class="tp">zeroxv6.space<span class="sep">/</span><span class="cp">blog</span></div>
+    <span class="clk" id="clk">--:--:--</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="ph rv">
+    <div><span class="ph-h">BLOG_</span></div>
+    <div class="ph-d">Long-form writing. Deep dives into Android internals, security research, and detailed reverse engineering case studies.</div>
+  </div>
+
+  <!-- FEATURED POST -->
+  <a href="post.html" class="feat rv">
+    <div class="feat-body">
+      <span class="feat-lbl">preview</span>
+      <div class="feat-t">The first post is still being written.</div>
+      <div class="feat-d">Nothing's published yet, but the reading experience is ready. Open this preview to see how posts will look once they're live.</div>
+      <div class="feat-meta">
+        <span>coming soon</span>
+        <span>//</span>
+        <span>preview</span>
+      </div>
+    </div>
+    <div class="feat-img">
+      <div class="feat-img-text">{ soon }</div>
+    </div>
+  </a>
+
+  <!-- BLOG FEED -->
+  <div class="b-feed rv">
+
+    <!-- POST ITEM -->
+    <a href="post.html" class="b-item">
+      <div class="b-meta">
+        <span class="b-date">SOON</span>
+        <span class="b-rt">-- min read</span>
+      </div>
+      <div class="b-content">
+        <div class="b-title">Slot reserved — post #2</div>
+        <div class="b-exc">Nothing written here yet. This card holds the place for whatever gets published next.</div>
+        <div class="b-tags">
+          <span class="btag red">soon</span>
+        </div>
+      </div>
+      <span class="b-arr">&#x2192;</span>
+    </a>
+
+    <!-- POST ITEM -->
+    <a href="post.html" class="b-item">
+      <div class="b-meta">
+        <span class="b-date">SOON</span>
+        <span class="b-rt">-- min read</span>
+      </div>
+      <div class="b-content">
+        <div class="b-title">Slot reserved — post #3</div>
+        <div class="b-exc">Empty for now. More long-form writing lands here as it's finished.</div>
+        <div class="b-tags">
+          <span class="btag">soon</span>
+        </div>
+      </div>
+      <span class="b-arr">&#x2192;</span>
+    </a>
+
+    <!-- POST ITEM -->
+    <a href="post.html" class="b-item">
+      <div class="b-meta">
+        <span class="b-date">SOON</span>
+        <span class="b-rt">-- min read</span>
+      </div>
+      <div class="b-content">
+        <div class="b-title">Slot reserved — post #4</div>
+        <div class="b-exc">Still blank. Come back later for the next write-up.</div>
+        <div class="b-tags">
+          <span class="btag">soon</span>
+        </div>
+      </div>
+      <span class="b-arr">&#x2192;</span>
+    </a>
+
+  </div>
+
+  <footer class="foot">
+    <span>zeroxv6 · built raw, no framework</span>
+    <span>no tracking · no analytics</span>
+  </footer>
+
+</div>
+</div>
+
+<script>
+function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+setInterval(tick,1000);tick();
+
+const rv=document.querySelectorAll('.rv');
+const io=new IntersectionObserver(es=>{
+  es.forEach((e,i)=>{
+    if(e.isIntersecting) setTimeout(()=>e.target.classList.add('in'), i*60);
+  });
+},{threshold:.05});
+rv.forEach(r=>{
+  io.observe(r);
+  if(r.getBoundingClientRect().top<window.innerHeight) r.classList.add('in');
+});
+</script>
+</body>
+</html>

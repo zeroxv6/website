@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zeroxv6 // post</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1a18;--sur:#252523;--sur2:#2f2f2d;--brd:#4a4a46;--brd2:#5a5a55;
+  --text:#ffffff;--dim:#e8e4d8;--mute:#c8c4b8;
+  --red:#ff5544;--red-hi:#ff7766;--red-lo:#cc3322;
+  --white:#ffffff;--green:#44ff88;--yellow:#ffaa22;
+  --ui:'Poppins',sans-serif;--body:'Source Serif Pro',serif;--head:'VT323',monospace;
+  --read-fs:18px;--read-w:700px;--read-lh:1.85;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:15px;line-height:1.6;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:.45;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:8999;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.035) 3px,rgba(0,0,0,0.035) 4px);}
+
+/* ── LAYOUT ── */
+.wrap{display:grid;grid-template-columns:195px 1fr;min-height:100vh;transition:grid-template-columns .25s ease;}
+.wrap.focus{grid-template-columns:0px 1fr;}
+
+/* ── SIDEBAR (canonical) ── */
+.sb{border-right:1px solid var(--brd);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow:hidden;transition:opacity .2s ease;}
+.wrap.focus .sb{opacity:0;pointer-events:none;border-right:none;}
+.sb-brand{padding:22px 16px 18px;border-bottom:1px solid var(--brd);}
+.sb-name{font-family:var(--head);font-size:54px;color:var(--white);letter-spacing:2px;line-height:1;display:block;}
+.sb-name::after{content:'_';color:var(--red);animation:bl 1.1s step-end infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.sb-sub{font-family:var(--ui);font-size:12px;color:var(--yellow);letter-spacing:4px;text-transform:uppercase;margin-top:5px;display:block;}
+.sb-nav{padding:14px 0;flex:1;overflow-y:auto;}
+.nav-sec{font-family:var(--ui);font-size:10px;letter-spacing:4px;color:var(--mute);text-transform:uppercase;padding:0 16px 7px;display:block;font-weight:600;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 16px;color:var(--dim);text-decoration:none;font-family:var(--ui);font-size:15px;font-weight:500;transition:color .1s,background .1s;border-left:2px solid transparent;white-space:nowrap;}
+.ni:hover,.ni.on{color:var(--white);background:rgba(255,85,68,0.07);border-left-color:var(--red);}
+.ni .ic{color:var(--red-lo);font-size:14px;width:16px;flex-shrink:0;}
+
+/* ── TOPBAR ── */
+.con{overflow-y:auto;display:flex;flex-direction:column;}
+.top{border-bottom:1px solid var(--brd);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;}
+.tp{font-family:var(--ui);font-size:12px;color:var(--dim);}
+.tp .sep{color:var(--red);margin:0 5px;}
+.tp .cp{color:var(--text);}
+.tp a{color:var(--dim);text-decoration:none;}
+.tp a:hover{color:var(--red);}
+.clk{font-family:var(--head);font-size:24px;color:var(--green);letter-spacing:2px;}
+
+/* ── PROGRESS BAR ── */
+.rprog{position:sticky;top:0;height:2px;background:var(--brd);z-index:99;}
+.rprog-f{height:100%;width:0%;background:linear-gradient(90deg,var(--red-lo),var(--red));transition:width .05s linear;}
+
+/* ── READER TOOLBAR ── */
+.rtool{border-bottom:1px solid var(--brd);background:var(--sur);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;position:sticky;top:2px;z-index:98;}
+.rtool-l{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.rtool-grp{display:flex;align-items:center;gap:2px;border:1px solid var(--brd);}
+.rtool-lbl{font-family:var(--ui);font-size:10px;letter-spacing:2px;color:var(--mute);text-transform:uppercase;font-weight:600;margin-right:6px;}
+.rbtn{background:none;border:none;border-right:1px solid var(--brd);color:var(--dim);font-family:var(--ui);font-size:13px;padding:6px 12px;cursor:pointer;transition:all .12s;font-weight:600;}
+.rbtn:last-child{border-right:none;}
+.rbtn:hover{background:var(--sur2);color:var(--white);}
+.rbtn.active{color:var(--red);background:rgba(255,85,68,.08);}
+.rbtn.big{font-size:16px;}
+.rtool-r{display:flex;align-items:center;gap:10px;}
+.rmeta{font-family:var(--ui);font-size:11px;color:var(--mute);font-weight:500;white-space:nowrap;}
+.rtool-icon-btn{background:none;border:1px solid var(--brd);color:var(--dim);font-family:var(--ui);font-size:11px;padding:6px 11px;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all .12s;font-weight:600;white-space:nowrap;}
+.rtool-icon-btn:hover{border-color:var(--red-lo);color:var(--white);}
+.rtool-icon-btn.on{border-color:var(--red-lo);color:var(--red);}
+.copied-tip{font-family:var(--ui);font-size:11px;color:var(--green);font-weight:600;opacity:0;transition:opacity .2s;}
+.copied-tip.show{opacity:1;}
+
+/* ── ARTICLE HEADER ── */
+.ahead{padding:44px 28px 30px;border-bottom:1px solid var(--brd);}
+.ahead-in{max-width:var(--read-w);margin:0 auto;transition:max-width .2s ease;}
+.a-lbl{font-family:var(--ui);font-size:11px;letter-spacing:4px;color:var(--yellow);text-transform:uppercase;font-weight:700;margin-bottom:14px;}
+.a-title{font-family:var(--head);font-size:52px;color:var(--white);line-height:1.05;letter-spacing:1px;margin-bottom:16px;}
+.a-sub{font-family:var(--body);font-size:17px;color:var(--dim);font-style:italic;line-height:1.7;margin-bottom:20px;}
+.a-meta{display:flex;align-items:center;gap:16px;font-family:var(--ui);font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:2px;font-weight:600;flex-wrap:wrap;}
+.a-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;}
+.atag{font-family:var(--ui);font-size:10px;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border:1px solid var(--brd2);color:var(--mute);font-weight:600;}
+.atag.red{border-color:var(--red-lo);color:var(--red);}
+
+/* ── ARTICLE BODY ── */
+.abody-wrap{padding:44px 28px 100px;}
+.abody{max-width:var(--read-w);margin:0 auto;font-family:var(--body);font-size:var(--read-fs);line-height:var(--read-lh);color:var(--dim);transition:max-width .2s ease,font-size .15s ease;}
+.abody p{margin-bottom:22px;}
+.abody h2{font-family:var(--ui);font-size:calc(var(--read-fs) * 0.62);color:var(--white);letter-spacing:3px;text-transform:uppercase;font-weight:700;margin:40px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--brd);}
+.abody h3{font-family:var(--ui);font-size:calc(var(--read-fs) * 0.55);color:var(--white);letter-spacing:2px;text-transform:uppercase;font-weight:700;margin:32px 0 12px;}
+.abody code{font-family:monospace;font-size:.88em;background:var(--sur2);border:1px solid var(--brd);padding:1px 6px;color:var(--white);}
+.abody pre{background:var(--sur);border:1px solid var(--brd);padding:18px 22px;margin:22px 0;overflow-x:auto;}
+.abody pre code{background:none;border:none;padding:0;font-size:.82em;line-height:1.65;color:var(--dim);}
+.abody ul,.abody ol{margin:0 0 22px 0;padding-left:0;list-style:none;}
+.abody ul li,.abody ol li{padding-left:22px;position:relative;margin-bottom:9px;}
+.abody ul li::before{content:'—';position:absolute;left:0;color:var(--mute);}
+.abody ol{counter-reset:ol-c;}
+.abody ol li::before{counter-increment:ol-c;content:counter(ol-c) '.';position:absolute;left:0;color:var(--red-lo);font-weight:600;}
+.abody blockquote{padding:16px 22px;margin:26px 0;background:var(--sur);border-left:3px solid var(--red-lo);font-style:italic;color:var(--dim);}
+.abody strong{color:var(--white);font-weight:600;}
+.abody .callout{background:var(--sur);border:1px solid var(--brd);padding:16px 20px;margin:22px 0;font-family:var(--ui);font-size:.78em;color:var(--mute);font-weight:500;line-height:1.7;}
+.abody .callout b{color:var(--dim);font-weight:700;display:block;font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-bottom:8px;}
+.abody hr{border:none;border-top:1px solid var(--brd);margin:36px 0;}
+
+/* ── END OF POST / NAV ── */
+.afoot{border-top:1px solid var(--brd);background:var(--sur);}
+.afoot-in{max-width:var(--read-w);margin:0 auto;padding:32px 28px;}
+.afoot-note{font-family:var(--ui);font-size:12px;color:var(--mute);text-align:center;margin-bottom:20px;letter-spacing:.5px;}
+.afoot-nav{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.afoot-btn{font-family:var(--ui);font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:10px 18px;border:1px solid var(--brd);color:var(--dim);text-decoration:none;transition:all .12s;font-weight:600;}
+.afoot-btn:hover{border-color:var(--red-lo);color:var(--white);}
+.afoot-btn.p{border-color:var(--red-lo);color:var(--red);}
+.afoot-btn.p:hover{background:rgba(255,85,68,.07);}
+
+/* ── FOOTER ── */
+.foot{padding:16px 28px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;font-family:var(--ui);font-size:12px;color:var(--mute);}
+
+/* ── BACK TO TOP ── */
+.totop{position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:var(--sur);border:1px solid var(--brd2);color:var(--dim);font-family:var(--head);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:all .2s;z-index:200;}
+.totop.show{opacity:1;pointer-events:auto;}
+.totop:hover{border-color:var(--red);color:var(--red);}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;}
+.rv.in{opacity:1;transform:none;}
+
+/* MOBILE MENU */
+.mobile-menu-btn{display:none;}
+.mobile-nav{display:none;}
+
+@media(max-width:768px){
+  html,body{height:auto;overflow:auto;overflow-x:hidden;}
+  .mobile-menu-btn{display:flex;position:fixed;top:14px;left:14px;z-index:9999;background:var(--sur);border:2px solid var(--brd);color:var(--white);font-family:var(--ui);font-size:20px;cursor:pointer;width:46px;height:46px;align-items:center;justify-content:center;}
+  .mobile-nav{display:block;position:fixed;inset:0;background:var(--bg);z-index:9998;padding:70px 20px 20px;overflow-y:auto;transform:translateX(-100%);transition:transform .3s;}
+  .mobile-nav.open{transform:translateX(0);}
+  .mobile-nav .ni{display:flex;align-items:center;gap:10px;font-size:17px;padding:14px 18px;margin-bottom:8px;border:1px solid var(--brd);text-decoration:none;color:var(--dim);font-family:var(--ui);font-weight:500;}
+  .mobile-nav .ni.on{color:var(--white);border-color:var(--red);}
+  .sb{display:none;}
+  .wrap,.wrap.focus{display:block;min-height:100vh;grid-template-columns:none;}
+  .con{display:block;overflow:visible;}
+  .top{padding:10px 16px 10px 68px;position:sticky;top:0;z-index:100;}
+
+  .rtool{padding:10px 16px;position:sticky;top:2px;}
+  .rtool-l{gap:10px;width:100%;justify-content:space-between;}
+  .rtool-r{width:100%;justify-content:space-between;}
+  .rmeta{font-size:10px;}
+
+  .ahead{padding:26px 16px 22px;}
+  .a-title{font-size:36px;}
+  .a-sub{font-size:15px;}
+  .a-meta{gap:10px;font-size:11px;}
+
+  .abody-wrap{padding:26px 16px 70px;}
+  .abody{font-size:calc(var(--read-fs) - 1px);}
+  .abody pre{padding:14px;}
+
+  .afoot-in{padding:24px 16px;}
+  .totop{right:16px;bottom:16px;width:40px;height:40px;}
+
+  .foot{flex-direction:column;gap:6px;padding:14px 16px;text-align:center;}
+}
+::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--brd2);}
+</style>
+</head>
+<body>
+<button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">&#9776;</button>
+<div class="mobile-nav" id="mobileNav" onclick="this.classList.remove('open')">
+  <a href="index.html" class="ni"><span class="ic">~</span>home</a>
+  <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+  <a href="blog.html" class="ni on"><span class="ic">#</span>blog</a>
+  <a href="lab.html" class="ni"><span class="ic">$</span>lab</a>
+  <a href="logbook.html" class="ni"><span class="ic">&gt;</span>logbook</a>
+  <a href="connect.html" class="ni"><span class="ic">@</span>connect</a>
+</div>
+
+<div class="wrap" id="wrap">
+<!-- ── SIDEBAR ── -->
+<aside class="sb">
+  <div class="sb-brand">
+    <span class="sb-name">zeroxv6</span>
+    <span class="sb-sub">raman mann</span>
+  </div>
+  <nav class="sb-nav">
+    <span class="nav-sec">navigate</span>
+    <a href="index.html"    class="ni"><span class="ic">~</span>home</a>
+    <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+    <a href="blog.html"     class="ni on"><span class="ic">#</span>blog</a>
+    <a href="lab.html"      class="ni"><span class="ic">$</span>lab</a>
+    <a href="logbook.html"  class="ni"><span class="ic">&gt;</span>logbook</a>
+    <a href="connect.html"  class="ni"><span class="ic">@</span>connect</a>
+  </nav>
+</aside>
+
+<!-- ── CONTENT ── -->
+<div class="con">
+
+  <!-- TOPBAR -->
+  <div class="top">
+    <div class="tp"><a href="blog.html">zeroxv6.space</a><span class="sep">/</span><span class="cp">post</span></div>
+    <span class="clk" id="clk">--:--:--</span>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="rprog"><div class="rprog-f" id="rprogF"></div></div>
+
+  <!-- READER TOOLBAR -->
+  <div class="rtool">
+    <div class="rtool-l">
+      <div>
+        <span class="rtool-lbl">text size</span>
+        <span class="rtool-grp">
+          <button class="rbtn" onclick="changeFont(-1)" title="smaller text">A&#8722;</button>
+          <button class="rbtn" onclick="resetFont()" title="reset text size">A</button>
+          <button class="rbtn big" onclick="changeFont(1)" title="larger text">A+</button>
+        </span>
+      </div>
+      <div>
+        <span class="rtool-lbl">width</span>
+        <span class="rtool-grp">
+          <button class="rbtn" data-w="narrow" onclick="setWidth('narrow',this)" title="narrow column">narrow</button>
+          <button class="rbtn active" data-w="comfortable" onclick="setWidth('comfortable',this)" title="comfortable column">comfy</button>
+          <button class="rbtn" data-w="wide" onclick="setWidth('wide',this)" title="wide column">wide</button>
+        </span>
+      </div>
+    </div>
+    <div class="rtool-r">
+      <span class="copied-tip" id="copiedTip">link copied</span>
+      <button class="rtool-icon-btn" onclick="copyLink()">copy link</button>
+      <button class="rtool-icon-btn" id="focusBtn" onclick="toggleFocus()">focus mode</button>
+      <span class="rmeta" id="readMeta">-- min read · 0% read</span>
+    </div>
+  </div>
+
+  <!-- ARTICLE HEADER -->
+  <div class="ahead rv">
+    <div class="ahead-in" id="aheadIn">
+      <div class="a-lbl">preview / draft</div>
+      <div class="a-title">This Is What Reading Will Feel Like Here</div>
+      <div class="a-sub">No posts have gone up yet — but the reader is built and ready. This placeholder shows how a real write-up will look, and lets you try the controls before there's anything to actually read.</div>
+      <div class="a-meta">
+        <span>coming soon</span>
+        <span>//</span>
+        <span id="rtEstimate">-- min read</span>
+        <span>//</span>
+        <span>preview build</span>
+      </div>
+      <div class="a-tags">
+        <span class="atag red">meta</span>
+        <span class="atag">preview</span>
+        <span class="atag">reader-ui</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ARTICLE BODY -->
+  <div class="abody-wrap rv">
+    <article class="abody" id="abody">
+      <p>Nothing has been published on this blog yet. When the first real post goes up, it will render inside this exact layout — same fonts, same rhythm, same set of controls above. Until then, consider this a working demo of the reading experience.</p>
+
+      <h2>Why a dedicated reader page</h2>
+      <p>The rest of the site is dense on purpose — boxy grids, small type, a lot packed into one screen. That works for scanning a homepage, but it's a bad way to actually <strong>read</strong> two thousand words about a Frida hook or a kernel bug. So posts get their own quieter layout: one column, generous line spacing, and nothing competing for attention.</p>
+
+      <h2>The controls above</h2>
+      <p>A few small things make longer posts easier to sit through:</p>
+      <ul>
+        <li><strong>Text size</strong> — bump it up on a phone, or down if you just prefer denser text. It's remembered the next time you open a post.</li>
+        <li><strong>Width</strong> — narrow for a tight, book-like column; wide if you'd rather use more of the screen on a big monitor.</li>
+        <li><strong>Focus mode</strong> — hides the sidebar entirely so the article is the only thing on screen.</li>
+        <li><strong>Progress</strong> — the thin bar under the top bar fills in as you scroll, and the estimated read time updates live based on actual word count.</li>
+      </ul>
+
+      <blockquote>A blog post should be easy to start and hard to put down by accident — not because of tricks, just because nothing gets in the way.</blockquote>
+
+      <h2>What a real post will look like</h2>
+      <p>Headings break sections up like the ones on this page. Inline <code>code</code> gets its own subtle styling, and longer snippets drop into a block like this:</p>
+      <pre><code>fun readySoon(): Boolean {
+    // first real post compiles here
+    return false
+}</code></pre>
+      <p>Quotes, asides, and numbered steps all have a place too — the typography underneath this placeholder is the same typography a finished article will use.</p>
+
+      <div class="callout"><b>// status</b>This page is fully wired up and waiting. As soon as an actual post exists, it drops in here and this note disappears.</div>
+
+      <h2>In the meantime</h2>
+      <p>Check <a href="blog.html" style="color:var(--red);text-decoration:none;border-bottom:1px solid var(--red-lo);">the blog index</a> for what's queued up, or swing by the <a href="logbook.html" style="color:var(--red);text-decoration:none;border-bottom:1px solid var(--red-lo);">logbook</a> for rawer, unfiltered notes in the meantime.</p>
+    </article>
+  </div>
+
+  <!-- END OF POST NAV -->
+  <div class="afoot rv">
+    <div class="afoot-in">
+      <div class="afoot-note">that's the whole preview — thanks for reading this far</div>
+      <div class="afoot-nav">
+        <a href="blog.html" class="afoot-btn">&#8592; back to blog</a>
+        <a href="index.html" class="afoot-btn p">home</a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span>zeroxv6 · built raw, no framework</span>
+    <span>no tracking · no analytics</span>
+  </footer>
+
+</div>
+</div>
+
+<button class="totop" id="totop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="back to top">&#8593;</button>
+
+<script>
+function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+setInterval(tick,1000);tick();
+
+/* ── reading time estimate (real word count) ── */
+(function(){
+  const words = document.getElementById('abody').innerText.trim().split(/\s+/).length;
+  const mins = Math.max(1, Math.round(words / 200));
+  document.getElementById('rtEstimate').textContent = mins + ' min read';
+  window.__readMins = mins;
+})();
+
+/* ── font size control (persisted) ── */
+const FS_MIN=15, FS_MAX=24, FS_DEFAULT=18;
+function getFont(){ return parseInt(localStorage.getItem('zv6_read_fs')) || FS_DEFAULT; }
+function applyFont(px){
+  document.documentElement.style.setProperty('--read-fs', px+'px');
+  localStorage.setItem('zv6_read_fs', px);
+}
+function changeFont(dir){
+  let px = getFont() + dir*1;
+  px = Math.max(FS_MIN, Math.min(FS_MAX, px));
+  applyFont(px);
+}
+function resetFont(){ applyFont(FS_DEFAULT); }
+applyFont(getFont());
+
+/* ── width control (persisted) ── */
+const WIDTHS = { narrow: '560px', comfortable: '700px', wide: '880px' };
+function applyWidth(key){
+  document.documentElement.style.setProperty('--read-w', WIDTHS[key] || WIDTHS.comfortable);
+  document.querySelectorAll('[data-w]').forEach(b=>b.classList.toggle('active', b.dataset.w===key));
+  localStorage.setItem('zv6_read_w', key);
+}
+function setWidth(key, el){ applyWidth(key); }
+applyWidth(localStorage.getItem('zv6_read_w') || 'comfortable');
+
+/* ── focus mode ── */
+function toggleFocus(){
+  const wrap = document.getElementById('wrap');
+  const btn = document.getElementById('focusBtn');
+  const on = wrap.classList.toggle('focus');
+  btn.classList.toggle('on', on);
+  localStorage.setItem('zv6_focus', on ? '1':'0');
+}
+if(localStorage.getItem('zv6_focus')==='1' && window.innerWidth>768){
+  document.getElementById('wrap').classList.add('focus');
+  document.getElementById('focusBtn').classList.add('on');
+}
+
+/* ── copy link ── */
+function copyLink(){
+  navigator.clipboard.writeText(location.href).catch(()=>{});
+  const tip = document.getElementById('copiedTip');
+  tip.classList.add('show');
+  setTimeout(()=>tip.classList.remove('show'), 1600);
+}
+
+/* ── scroll progress + back-to-top + live percent ── */
+function onScroll(){
+  const doc = document.documentElement;
+  const scrollTop = window.scrollY || doc.scrollTop;
+  const height = doc.scrollHeight - doc.clientHeight;
+  const pct = height>0 ? Math.min(100, Math.round((scrollTop/height)*100)) : 0;
+  document.getElementById('rprogF').style.width = pct+'%';
+  document.getElementById('readMeta').textContent = (window.__readMins||1)+' min read · '+pct+'% read';
+  document.getElementById('totop').classList.toggle('show', scrollTop > 600);
+}
+window.addEventListener('scroll', onScroll, {passive:true});
+onScroll();
+
+/* ── reveal ── */
+const rv=document.querySelectorAll('.rv');
+const io=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('in'),i*60);});},{threshold:.05});
+rv.forEach(r=>{io.observe(r);if(r.getBoundingClientRect().top<window.innerHeight)r.classList.add('in');});
+</script>
+</body>
+</html>

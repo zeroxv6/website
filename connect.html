@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>zeroxv6 // connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1a1a18;--sur:#252523;--sur2:#2f2f2d;--brd:#4a4a46;--brd2:#5a5a55;
+  --text:#ffffff;--dim:#e8e4d8;--mute:#c8c4b8;
+  --red:#ff5544;--red-hi:#ff7766;--red-lo:#cc3322;
+  --white:#ffffff;--green:#44ff88;--yellow:#ffaa22;
+  --ui:'Poppins',sans-serif;--body:'Source Serif Pro',serif;--head:'VT323',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--ui);font-size:15px;line-height:1.6;overflow-x:hidden;min-height:100vh;}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9000;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:.45;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:8999;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.035) 3px,rgba(0,0,0,0.035) 4px);}
+
+/* CANONICAL SIDEBAR */
+.wrap{display:grid;grid-template-columns:195px 1fr;min-height:100vh;}
+.sb{border-right:1px solid var(--brd);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.sb-brand{padding:22px 16px 18px;border-bottom:1px solid var(--brd);}
+.sb-name{font-family:var(--head);font-size:54px;color:var(--white);letter-spacing:2px;line-height:1;display:block;}
+.sb-name::after{content:'_';color:var(--red);animation:bl 1.1s step-end infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:0}}
+.sb-sub{font-family:var(--ui);font-size:12px;color:var(--yellow);letter-spacing:4px;text-transform:uppercase;margin-top:5px;display:block;}
+.sb-ping{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--mute);margin-top:10px;}
+.ping{width:5px;height:5px;background:var(--green);border-radius:50%;animation:pu 2.2s ease infinite;}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.35}}
+.sb-nav{padding:14px 0;flex:1;overflow-y:auto;}
+.nav-sec{font-family:var(--ui);font-size:10px;letter-spacing:4px;color:var(--mute);text-transform:uppercase;padding:0 16px 7px;display:block;font-weight:600;}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 16px;color:var(--dim);text-decoration:none;font-family:var(--ui);font-size:15px;font-weight:500;transition:color .1s,background .1s;border-left:2px solid transparent;}
+.ni:hover,.ni.on{color:var(--white);background:rgba(255,85,68,0.07);border-left-color:var(--red);}
+.ni .ic{color:var(--red-lo);font-size:14px;width:16px;flex-shrink:0;}
+.ni .ct{margin-left:auto;font-size:10px;color:var(--mute);font-weight:400;}
+.sb-foot{border-top:1px solid var(--brd);padding:14px 16px;font-family:var(--ui);font-size:12px;color:var(--mute);line-height:2.1;}
+.sb-foot b{color:var(--green);font-weight:500;}
+
+/* TOPBAR */
+.con{overflow-y:auto;display:flex;flex-direction:column;}
+.top{border-bottom:1px solid var(--brd);padding:10px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);position:sticky;top:0;z-index:100;}
+.tp{font-family:var(--ui);font-size:12px;color:var(--dim);}
+.tp .sep{color:var(--red);margin:0 5px;}
+.tp .cp{color:var(--text);}
+.clk{font-family:var(--head);font-size:24px;color:var(--green);letter-spacing:2px;}
+
+/* PAGE HEADER — boxy strip */
+.ph{border-bottom:1px solid var(--brd);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;}
+.ph-cell{padding:28px 28px;border-right:1px solid var(--brd);}
+.ph-cell:last-child{border-right:none;}
+.ph-label{font-family:var(--ui);font-size:10px;letter-spacing:4px;color:var(--mute);text-transform:uppercase;font-weight:600;margin-bottom:8px;}
+.ph-val{font-family:var(--head);font-size:40px;color:var(--white);letter-spacing:1px;line-height:1;}
+.ph-val.red{color:var(--red);}
+.ph-val.yellow{color:var(--yellow);}
+.ph-val.green{color:var(--green);}
+.ph-sub{font-family:var(--ui);font-size:12px;color:var(--mute);margin-top:5px;font-weight:500;}
+
+/* SECTION HEADER */
+.sec-hd{padding:11px 28px;border-bottom:1px solid var(--brd);background:var(--sur);display:flex;align-items:center;justify-content:space-between;}
+.sec-title{font-family:var(--ui);font-size:11px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;font-weight:700;}
+.sec-note{font-family:var(--ui);font-size:12px;color:var(--mute);font-weight:500;}
+
+/* ────────────────────────────────────────
+   PLATFORM GRID — the main contact block
+   4 columns, each platform is a full box
+   ──────────────────────────────────────── */
+.platforms{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1px;background:var(--brd);border-bottom:1px solid var(--brd);}
+.plat{background:var(--bg);padding:28px 26px;display:flex;flex-direction:column;gap:0;transition:background .12s;cursor:pointer;text-decoration:none;position:relative;overflow:hidden;}
+.plat:hover{background:var(--sur);}
+.plat:hover .plat-arr{opacity:1;transform:translateX(0);}
+.plat:hover .plat-handle{color:var(--white);}
+
+/* thin top accent line that is NOT a colored left border — it's a full-width top rule in the hover color only */
+.plat::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:var(--red);transform:scaleX(0);transform-origin:left;transition:transform .2s ease;}
+.plat:hover::before{transform:scaleX(1);}
+
+.plat-platform{font-family:var(--ui);font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--mute);margin-bottom:14px;font-weight:600;}
+.plat-handle{font-family:var(--head);font-size:38px;color:var(--dim);letter-spacing:1px;line-height:1;margin-bottom:10px;transition:color .12s;word-break:break-all;}
+.plat-desc{font-family:var(--body);font-size:14px;color:var(--mute);font-style:italic;line-height:1.55;flex:1;}
+.plat-arr{font-family:var(--head);font-size:28px;color:var(--red);margin-top:18px;opacity:0;transform:translateX(-6px);transition:all .15s;display:block;}
+.plat-url{font-family:var(--ui);font-size:11px;color:var(--mute);margin-top:10px;font-weight:500;letter-spacing:.5px;word-break:break-all;}
+
+/* PREFERRED badge on email */
+.pref-badge{display:inline-block;font-family:var(--ui);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:2px 7px;border:1px solid #2a5a3a;color:var(--green);font-weight:600;margin-bottom:10px;}
+
+/* ────────────────────────────────────────
+   LOWER SECTION — 2-col: form + info
+   ──────────────────────────────────────── */
+.lower{display:grid;grid-template-columns:1fr 1fr;}
+.lower-left{border-right:1px solid var(--brd);padding:32px 28px;}
+.lower-right{padding:32px 28px;}
+
+/* FORM */
+.form-title{font-family:var(--ui);font-size:11px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;font-weight:700;margin-bottom:20px;}
+.form-note{font-family:var(--body);font-size:15px;color:var(--dim);font-style:italic;line-height:1.75;margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid var(--brd);}
+.crow{margin-bottom:16px;}
+.clbl{font-family:var(--ui);font-size:10px;letter-spacing:3px;color:var(--mute);text-transform:uppercase;display:block;margin-bottom:6px;font-weight:600;}
+.ci{width:100%;background:var(--sur);border:1px solid var(--brd);color:var(--text);font-family:var(--ui);font-size:15px;padding:10px 13px;outline:none;transition:border-color .12s;resize:vertical;font-weight:500;}
+.ci:focus{border-color:var(--brd2);}
+.ci::placeholder{color:var(--mute);}
+textarea.ci{min-height:100px;}
+.sbtn{width:100%;background:var(--sur);border:1px solid var(--brd);color:var(--dim);font-family:var(--ui);font-size:13px;padding:12px 18px;cursor:pointer;letter-spacing:3px;text-transform:uppercase;transition:all .12s;margin-top:8px;text-align:left;display:flex;align-items:center;justify-content:space-between;font-weight:700;}
+.sbtn:hover{border-color:var(--red-lo);color:var(--white);}
+.sfb{font-family:var(--ui);font-size:12px;color:var(--green);margin-top:10px;display:none;font-weight:500;}
+
+/* RIGHT INFO */
+.info-title{font-family:var(--ui);font-size:11px;letter-spacing:4px;color:var(--dim);text-transform:uppercase;font-weight:700;margin-bottom:20px;}
+
+/* AVAILABILITY TABLE */
+.av-table{border:1px solid var(--brd);margin-bottom:28px;}
+.av-row{display:grid;grid-template-columns:1fr auto;padding:12px 16px;border-bottom:1px solid var(--brd);align-items:center;}
+.av-row:last-child{border-bottom:none;}
+.av-l{font-family:var(--ui);font-size:14px;color:var(--dim);font-weight:500;}
+.av-yes{font-family:var(--ui);font-size:13px;color:var(--green);font-weight:600;letter-spacing:1px;}
+.av-no{font-family:var(--ui);font-size:13px;color:var(--red);font-weight:600;letter-spacing:1px;}
+.av-mb{font-family:var(--ui);font-size:13px;color:var(--yellow);font-weight:600;letter-spacing:1px;}
+
+/* RESPONSE INFO */
+.resp-box{border:1px solid var(--brd);padding:18px 20px;margin-bottom:28px;}
+.resp-title{font-family:var(--ui);font-size:10px;letter-spacing:3px;color:var(--mute);text-transform:uppercase;font-weight:600;margin-bottom:12px;}
+.resp-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--brd);}
+.resp-row:last-child{border-bottom:none;}
+.resp-l{font-family:var(--ui);font-size:13px;color:var(--dim);font-weight:500;}
+.resp-v{font-family:var(--ui);font-size:13px;color:var(--text);font-weight:600;}
+
+/* PGP BOX */
+.pgp-box{border:1px solid var(--brd);padding:18px 20px;}
+.pgp-title{font-family:var(--ui);font-size:10px;letter-spacing:3px;color:var(--mute);text-transform:uppercase;font-weight:600;margin-bottom:10px;}
+.pgp-key{font-family:monospace;font-size:12px;color:var(--dim);word-break:break-all;line-height:1.6;}
+.pgp-fp{font-family:var(--ui);font-size:12px;color:var(--red-lo);margin-top:8px;font-weight:500;}
+.pgp-copy{background:none;border:1px solid var(--brd);color:var(--mute);font-family:var(--ui);font-size:11px;padding:4px 11px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .1s;font-weight:600;margin-top:10px;}
+.pgp-copy:hover{border-color:var(--brd2);color:var(--white);}
+
+/* FOOTER */
+.foot{padding:16px 28px;border-top:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;font-family:var(--ui);font-size:12px;color:var(--mute);}
+
+/* REVEAL */
+.rv{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;}
+.rv.in{opacity:1;transform:none;}
+
+/* MOBILE MENU (hidden on desktop) */
+.mobile-menu-btn{display:none;}
+.mobile-nav{display:none;}
+
+/* ══════════════════════════════════════
+   MOBILE — full rewrite from scratch
+   ══════════════════════════════════════ */
+@media(max-width:768px){
+  html,body{height:auto;overflow:auto;overflow-x:hidden;}
+  .mobile-menu-btn{display:flex;position:fixed;top:14px;left:14px;z-index:9999;background:var(--sur);border:2px solid var(--brd);color:var(--white);font-family:var(--ui);font-size:20px;cursor:pointer;width:46px;height:46px;align-items:center;justify-content:center;}
+  .mobile-nav{display:block;position:fixed;inset:0;background:var(--bg);z-index:9998;padding:70px 20px 20px;overflow-y:auto;transform:translateX(-100%);transition:transform .3s;}
+  .mobile-nav.open{transform:translateX(0);}
+  .mobile-nav .ni{display:flex;align-items:center;gap:10px;font-size:17px;padding:14px 18px;margin-bottom:8px;border:1px solid var(--brd);text-decoration:none;color:var(--dim);font-family:var(--ui);font-weight:500;}
+  .mobile-nav .ni.on{color:var(--white);border-color:var(--red);}
+  .sb{display:none;}
+  .wrap{display:block;min-height:100vh;}
+  .con{display:block;overflow:visible;}
+  .top{padding:10px 16px 10px 68px;position:sticky;top:0;z-index:100;}
+  /* header stat strip: 2-col grid */
+  .ph{display:grid;grid-template-columns:1fr 1fr;}
+  .ph-cell{padding:16px;}
+  .ph-cell:nth-child(3),.ph-cell:nth-child(4){border-top:1px solid var(--brd);}
+  .ph-cell:nth-child(even){border-right:none;}
+  .ph-val{font-size:28px;}
+  .ph-sub{font-size:11px;}
+  /* section header */
+  .sec-hd{padding:10px 16px;}
+  /* platforms: single column */
+  .platforms{display:block;background:none;}
+  .plat{padding:20px 16px;border-bottom:1px solid var(--brd);}
+  .plat-handle{font-size:28px;}
+  .plat-desc{font-size:13px;}
+  /* lower section */
+  .lower{display:block;}
+  .lower-left{border-right:none;border-bottom:1px solid var(--brd);padding:20px 16px;}
+  .lower-right{padding:20px 16px;}
+  /* availability table */
+  .av-table{font-size:13px;}
+  .av-row{padding:10px 14px;}
+  .av-l{font-size:13px;}
+  /* footer */
+  .foot{flex-direction:column;gap:6px;padding:14px 16px;text-align:center;}
+}
+::-webkit-scrollbar{width:3px;} ::-webkit-scrollbar-track{background:var(--bg);} ::-webkit-scrollbar-thumb{background:var(--brd2);}
+</style>
+</head>
+<body>
+<button class="mobile-menu-btn" onclick="document.getElementById('mobileNav').classList.toggle('open')">&#9776;</button>
+<div class="mobile-nav" id="mobileNav" onclick="this.classList.remove('open')">
+  <a href="index.html" class="ni"><span class="ic">~</span>home</a>
+  <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+  <a href="blog.html" class="ni"><span class="ic">#</span>blog</a>
+  <a href="lab.html" class="ni"><span class="ic">$</span>lab</a>
+  <a href="logbook.html" class="ni"><span class="ic">&gt;</span>logbook</a>
+
+  <a href="connect.html" class="ni on"><span class="ic">@</span>connect</a>
+</div>
+<div class="wrap">
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-brand">
+    <span class="sb-name">zeroxv6</span>
+    <span class="sb-sub">raman mann</span>
+
+  </div>
+  <nav class="sb-nav">
+    <span class="nav-sec">navigate</span>
+    <a href="index.html"    class="ni"><span class="ic">~</span>home</a>
+    <a href="projects.html" class="ni"><span class="ic">/</span>projects</a>
+    <a href="blog.html"     class="ni"><span class="ic">#</span>blog</a>
+    <a href="lab.html"      class="ni"><span class="ic">$</span>lab</a>
+    <a href="logbook.html"  class="ni"><span class="ic">&gt;</span>logbook</a>
+    <a href="connect.html"  class="ni on"><span class="ic">@</span>connect</a>
+  </nav>
+
+</aside>
+
+<!-- CONTENT -->
+<div class="con">
+
+  <!-- TOPBAR -->
+  <div class="top">
+    <div class="tp">zeroxv6.dev<span class="sep">/</span><span class="cp">connect</span></div>
+    <span class="clk" id="clk">--:--:--</span>
+  </div>
+
+  <!-- HEADER STAT STRIP -->
+  <div class="ph rv">
+    <div class="ph-cell">
+      <div class="ph-label">identity</div>
+      <div class="ph-val">zeroxv6</div>
+      <div class="ph-sub">Raman Mann</div>
+    </div>
+    <div class="ph-cell">
+      <div class="ph-label">platforms</div>
+      <div class="ph-val yellow">07</div>
+      <div class="ph-sub">ways to reach me</div>
+    </div>
+    <div class="ph-cell">
+      <div class="ph-label">response</div>
+      <div class="ph-val red">2–7d</div>
+      <div class="ph-sub">typical reply time</div>
+    </div>
+    <div class="ph-cell">
+      <div class="ph-label">preferred</div>
+      <div class="ph-val green">email</div>
+      <div class="ph-sub">raman@zeroxv6.dev</div>
+    </div>
+  </div>
+
+  <!-- PLATFORMS SECTION HEADER -->
+  <div class="sec-hd rv">
+    <span class="sec-title">platforms</span>
+    <span class="sec-note">click any card to open</span>
+  </div>
+
+  <!-- PLATFORM GRID -->
+  <div class="platforms rv">
+
+    <a class="plat" href="mailto:raman@zeroxv6.dev">
+      <!-- <div class="pref-badge">preferred</div> -->
+      <div class="plat-platform">email</div>
+      <div class="plat-handle">raman@zeroxv6</div>
+      <div class="plat-desc">Slowest but most reliable. I read everything. Complex topics, collaboration proposals, bug reports that don't belong on GitHub.</div>
+      <div class="plat-url">raman@zeroxv6.dev</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://github.com/zeroxv6" target="_blank" rel="noopener">
+      <div class="plat-platform">github</div>
+      <div class="plat-handle">zeroxv6</div>
+      <div class="plat-desc">All open source projects live here. Bug reports, pull requests, and issues get the fastest response out of anything. Best place for project-specific questions.</div>
+      <div class="plat-url">github.com/zeroxv6</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://twitter.com/zeroxv6" target="_blank" rel="noopener">
+      <div class="plat-platform">twitter / x</div>
+      <div class="plat-handle">@zeroxv6</div>
+      <div class="plat-desc">Mostly lurking. Occasional posts about android internals, security research, and things I found interesting. DMs are open but slow.</div>
+      <div class="plat-url">twitter.com/zeroxv6</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://discord.com/users/zeroxv6" target="_blank" rel="noopener">
+      <div class="plat-platform">discord</div>
+      <div class="plat-handle">zeroxv6</div>
+      <div class="plat-desc">Active in a few Android and security-focused servers. Direct messages are open. Fastest for quick technical back-and-forth on something specific.</div>
+      <div class="plat-url">discord: zeroxv6</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://linkedin.com/in/ramanmann" target="_blank" rel="noopener">
+      <div class="plat-platform">linkedin</div>
+      <div class="plat-handle">Raman Mann</div>
+      <div class="plat-desc">I check this occasionally. Professional inquiries, formal introductions. If it has to be LinkedIn — this is the one. Connection requests welcome.</div>
+      <div class="plat-url">linkedin.com/in/ramanmann</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://t.me/zeroxv6" target="_blank" rel="noopener">
+      <div class="plat-platform">telegram</div>
+      <div class="plat-handle">@zeroxv6</div>
+      <div class="plat-desc">Good for quick messages. I'm not always active here but notifications come through. Fine for short questions or sharing something interesting.</div>
+      <div class="plat-url">t.me/zeroxv6</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+    <a class="plat" href="https://reddit.com/u/zeroxv6" target="_blank" rel="noopener">
+      <div class="plat-platform">reddit</div>
+      <div class="plat-handle">u/zeroxv6</div>
+      <div class="plat-desc">Mostly read-only. I post in r/androiddev, r/netsec, r/ReverseEngineering occasionally. DMs are hit or miss — email is better for direct contact.</div>
+      <div class="plat-url">reddit.com/u/zeroxv6</div>
+      <span class="plat-arr">&#x2192;</span>
+    </a>
+
+
+
+  </div>
+
+  <!-- LOWER: FORM + INFO -->
+  <div class="lower rv">
+
+
+    <!-- LEFT: MESSAGE FORM
+    <div class="lower-left">
+      <div class="form-title">send a message</div>
+      <div class="form-note">Not looking for freelance right now. Found a bug in one of my projects — open a GitHub issue. Want to talk android security, compare notes, or collaborate on something — I'm genuinely interested in that.</div>
+      <div class="crow">
+        <label class="clbl">your email</label>
+        <input class="ci" type="email" id="fEmail" placeholder="your@email.tld">
+      </div>
+      <div class="crow">
+        <label class="clbl">subject</label>
+        <input class="ci" type="text" id="fSubject" placeholder="what is this about">
+      </div>
+      <div class="crow">
+        <label class="clbl">message</label>
+        <textarea class="ci" id="fMsg" placeholder="..."></textarea>
+      </div>
+      <div class="crow">
+        <label class="clbl">preferred reply platform</label>
+        <select class="ci" id="fPlatform" style="appearance:none;-webkit-appearance:none;cursor:pointer;">
+          <option value="">email (default)</option>
+          <option value="discord">discord</option>
+          <option value="telegram">telegram</option>
+          <option value="github">github issue</option>
+        </select>
+      </div>
+      <button class="sbtn" onclick="sendMsg()">
+        <span>send message</span>
+        <span>&#x2192;</span>
+      </button>
+      <div class="sfb" id="sfb">message queued. will respond within a few days.</div>
+    </div>-->
+
+    <!-- RIGHT: AVAILABILITY + RESPONSE + PGP -->
+    <div class="lower-right">
+      <div class="info-title">what I respond to</div>
+      <div class="av-table">
+        <div class="av-row"><span class="av-l">android development questions</span><span class="av-yes">yes</span></div>
+        <div class="av-row"><span class="av-l">security research discussion</span><span class="av-yes">yes</span></div>
+        <div class="av-row"><span class="av-l">open source collaboration</span><span class="av-yes">yes</span></div>
+        <div class="av-row"><span class="av-l">bug reports on my projects</span><span class="av-yes">yes — use GitHub</span></div>
+        <div class="av-row"><span class="av-l">freelance work</span><span class="av-no">not currently</span></div>
+        <div class="av-row"><span class="av-l">security consulting</span><span class="av-mb">case-by-case</span></div>
+        <div class="av-row"><span class="av-l">recruiting / job offers</span><span class="av-no">not interested</span></div>
+        <div class="av-row"><span class="av-l">generic networking</span><span class="av-mb">occasionally</span></div>
+      </div>
+
+      <!--<div class="resp-box">
+        <div class="resp-title">response times by platform</div>
+        <div class="resp-row"><span class="resp-l">GitHub issues</span><span class="resp-v">1–3 days</span></div>
+        <div class="resp-row"><span class="resp-l">Discord</span><span class="resp-v">1–5 days</span></div>
+        <div class="resp-row"><span class="resp-l">Email</span><span class="resp-v">2–7 days</span></div>
+        <div class="resp-row"><span class="resp-l">Telegram</span><span class="resp-v">2–7 days</span></div>
+        <div class="resp-row"><span class="resp-l">Twitter DMs</span><span class="resp-v">1–2 weeks</span></div>
+        <div class="resp-row"><span class="resp-l">LinkedIn</span><span class="resp-v">1–2 weeks</span></div>
+        <div class="resp-row"><span class="resp-l">Reddit DMs</span><span class="resp-v">hit or miss</span></div>
+      </div>-->
+
+
+    </div>
+  </div>
+
+  <footer class="foot">
+    <span>zeroxv6 · built raw, no framework</span>
+    <span>no tracking · no analytics</span>
+  </footer>
+
+</div>
+</div>
+
+<script>
+function tick(){
+  const n=new Date();
+  document.getElementById('clk').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+
+    String(n.getMinutes()).padStart(2,'0')+':'+
+    String(n.getSeconds()).padStart(2,'0');
+}
+setInterval(tick,1000);tick();
+
+function sendMsg(){
+  const email=document.getElementById('fEmail').value.trim();
+  const msg=document.getElementById('fMsg').value.trim();
+  if(!email||!msg){return;}
+  const fb=document.getElementById('sfb');
+  fb.style.display='block';
+  setTimeout(()=>fb.style.display='none',6000);
+}
+
+
+
+const rv=document.querySelectorAll('.rv');
+const io=new IntersectionObserver(es=>{es.forEach((e,i)=>{if(e.isIntersecting)setTimeout(()=>e.target.classList.add('in'),i*60);});},{threshold:.05});
+rv.forEach(r=>{io.observe(r);if(r.getBoundingClientRect().top<window.innerHeight)r.classList.add('in');});
+</script>
+</body>
+</html>
